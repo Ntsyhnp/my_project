@@ -1,0 +1,27 @@
+<.header>
+  Dashboard {@dashboard.id}
+  <:subtitle>This is a dashboard record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/dashboards/#{@dashboard}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit dashboard</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Title">{@dashboard.title}</:item>
+  <:item title="Description">{@dashboard.description}</:item>
+</.list>
+
+<.back navigate={~p"/dashboards"}>Back to dashboards</.back>
+
+<.modal :if={@live_action == :edit} id="dashboard-modal" show on_cancel={JS.patch(~p"/dashboards/#{@dashboard}")}>
+  <.live_component
+    module={MyProjectWeb.DashboardLive.FormComponent}
+    id={@dashboard.id}
+    title={@page_title}
+    action={@live_action}
+    dashboard={@dashboard}
+    patch={~p"/dashboards/#{@dashboard}"}
+  />
+</.modal>
