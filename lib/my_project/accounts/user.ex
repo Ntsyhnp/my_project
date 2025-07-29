@@ -36,6 +36,12 @@ defmodule MyProject.Accounts.User do
       submitting the form), this option can be set to `false`.
       Defaults to `true`.
   """
+  def changeset(user, attrs) do
+    user
+    |> cast(attrs, [:name, :age, :ic])
+    |> validate_required([:name, :age, :ic])
+  end
+
   def registration_changeset(user, attrs, opts \\ []) do
     user
     |> cast(attrs, [:email, :password, :role])
@@ -94,6 +100,14 @@ defmodule MyProject.Accounts.User do
 
   It requires the email to change otherwise an error is added.
   """
+
+  def profile_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:name, :age, :ic])
+    |> validate_required([:name, :age, :ic])
+  end
+
+
   def email_changeset(user, attrs, opts \\ []) do
     user
     |> cast(attrs, [:email])

@@ -5,8 +5,20 @@ defmodule MyProject.Accounts do
 
   import Ecto.Query, warn: false
   alias MyProject.Repo
-
   alias MyProject.Accounts.{User, UserToken, UserNotifier}
+
+  def list_users do
+     Repo.all(User)
+  end
+
+  alias MyProject.Accounts.User
+
+  def paginated_users(limit, offset) do
+    User
+    |> limit(^limit)
+    |> offset(^offset)
+    |> Repo.all()
+  end
 
   ## Database getters
 
@@ -22,6 +34,7 @@ defmodule MyProject.Accounts do
       nil
 
   """
+
   def get_user_by_email(email) when is_binary(email) do
     Repo.get_by(User, email: email)
   end
@@ -43,6 +56,7 @@ defmodule MyProject.Accounts do
     user = Repo.get_by(User, email: email)
     if User.valid_password?(user, password), do: user
   end
+
 
   @doc """
   Gets a single user.
@@ -350,4 +364,12 @@ defmodule MyProject.Accounts do
       {:error, :user, changeset, _} -> {:error, changeset}
     end
   end
+
+  def update_user_profile(%User{} = user, attrs) do
+    user
+    |> User.profile_changeset(attrs)
+    |> Repo.update()
+  end
+
+
 end
