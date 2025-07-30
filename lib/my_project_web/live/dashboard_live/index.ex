@@ -44,4 +44,5 @@ defmodule MyProjectWeb.DashboardLive.Index do
 
     {:noreply, stream_delete(socket, :dashboards, dashboard)}
   end
+
 end
