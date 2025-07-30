@@ -116,7 +116,8 @@ defmodule MyProjectWeb.UserDashboardLive do
           </a>
           <a href="#" phx-click="nav" phx-value-id="password"
              class="block px-2 py-1 rounded hover:bg-gray-600 text-sm">
-            Tukar Kata Laluan
+            Tukar Password
+
           </a>
         </div>
     </aside>
@@ -187,6 +188,7 @@ defmodule MyProjectWeb.UserDashboardLive do
    <!-- Pagination button end here -->
   </div>
     <% end %>
+
 
       <%= if @active == "password" do %>
         <div class="bg-white p-6 rounded shadow"> Tukar kata laluan</div>
