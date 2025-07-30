@@ -14,9 +14,7 @@ defmodule MyProject.Accounts do
   alias MyProject.Accounts.User
 
   def paginated_users(limit, offset) do
-    User
-    |> limit(^limit)
-    |> offset(^offset)
+    from(u in User, order_by: [desc: u.inserted_at], limit: ^limit, offset: ^offset)
     |> Repo.all()
   end
 
@@ -103,7 +101,7 @@ defmodule MyProject.Accounts do
       %Ecto.Changeset{data: %User{}}
 
   """
-  def change_user_registration(%User{} = user, attrs \\ %{}) do
+  def change_user_registration(user, attrs \\ %{}) do
     User.registration_changeset(user, attrs, hash_password: false, validate_email: false)
   end
 

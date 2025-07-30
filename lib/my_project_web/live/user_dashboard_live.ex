@@ -188,51 +188,6 @@ defmodule MyProjectWeb.UserDashboardLive do
   </div>
     <% end %>
 
-    <%= if @active == "profile" do %>
-  <div class="bg-white p-6 rounded shadow w-full max-w-2xl mx-auto mt-6">
-    <h2 class="text-xl font-bold mb-4">Kemaskini Profil</h2>
-
-    <.form
-      for={@profile_changeset}
-      id="profile-form"
-      phx-change="validate"
-      phx-submit="save_profile"
-      class="space-y-4"
-      let={f}
-      >
-
-      <!-- Nama -->
-      <div>
-        <%= label f, :name, "Nama" %>
-        <%= text_input f, :name %>
-      </div>
-
-      <!-- Umur -->
-      <div>
-        <%= label f, :age, "Umur" %>
-        <%= number_input f, :age %>
-      </div>
-
-      <!-- IC -->
-      <div>
-        <%= label f, :ic, "No Kad Pengenalan" %>
-        <%= text_input f, :ic %>
-      </div>
-
-      <!-- Gambar Profil -->
-      <div>
-        <%= label f, :avatar, "Gambar Profil", class: "block font-medium" %>
-        <%= file_input f, :avatar, class: "input w-full" %>
-      </div>
-
-      <div>
-        <%= submit "Simpan", class: "bg-blue-500 text-white px-4 py-2 rounded" %>
-      </div>
-    </.form>
-  </div>
-   <% end %>
-
-
       <%= if @active == "password" do %>
         <div class="bg-white p-6 rounded shadow"> Tukar kata laluan</div>
       <% end %>
