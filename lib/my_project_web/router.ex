@@ -107,5 +107,4 @@ defmodule MyProjectWeb.Router do
   live "/dashboard", AdminDashboardLive
 end
 
-  delete "/users/log_out", UserSessionController, :delete
 end
