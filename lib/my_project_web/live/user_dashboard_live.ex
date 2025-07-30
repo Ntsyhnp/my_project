@@ -33,9 +33,22 @@ defmodule MyProjectWeb.UserDashboardLive do
   defp assign_users(socket, page) do
     limit = 10
     offset = (page - 1) * limit
-    users = Accounts.paginated_users(limit, offset)
-    assign(socket, users: users, page: page)
+    users = Accounts.paginated_users(limit + 1, offset)
+
+    {displayed_users, has_next_page} =
+      if length(users) > limit do
+        {Enum.take(users, limit), true}
+      else
+        {users, false}
+      end
+
+    assign(socket,
+      users: displayed_users,
+      page: page,
+      has_next_page: has_next_page
+    )
   end
+
 
   def handle_event("toggle_sidebar", _params, socket) do
     {:noreply, update(socket, :sidebar_open, &(!&1))}
@@ -114,6 +127,7 @@ defmodule MyProjectWeb.UserDashboardLive do
                   <th class="px-4 py-5 text-left">#</th>
                   <th class="px-4 py-5 text-left min-w-[300px]">Email</th>
                   <th class="px-4 py-5 text-left min-w-[300px]">Tarikh Daftar</th>
+                  <th class="px-4 py-5 text-left">Role</th>
                   <th class="px-6 py-4 text-left min-w-[200px]">Actions</th>
                 </tr>
               </thead>
@@ -123,6 +137,7 @@ defmodule MyProjectWeb.UserDashboardLive do
                     <td class="px-6 py-4"><%= i %></td>
                     <td class="px-6 py-4"><%= user.email %></td>
                     <td class="px-6 py-4"><%= format_datetime(user.inserted_at) %></td>
+                    <td class="px-6 py-4"><%= user.role %></td>
                     <td class="px-6 py-4 space-x-2">
                       <a href={~p"/users/#{user.id}/edit"} class="text-blue-600 hover:underline">Edit</a>
                       <button phx-click="delete_user" phx-value-id={user.id} class="text-red-600 hover:underline">Delete</button>
@@ -131,6 +146,7 @@ defmodule MyProjectWeb.UserDashboardLive do
                 <% end %>
               </tbody>
             </table>
+
 
             <!-- Pagination -->
             <div class="mt-6 flex justify-between items-center">
@@ -144,12 +160,17 @@ defmodule MyProjectWeb.UserDashboardLive do
 
               <span class="text-sm text-gray-700">Page <%= @page %></span>
 
-              <.link patch={~p"/users/dashboard?page=#{@page + 1}"}>
-                <button class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Next</button>
-              </.link>
-            </div>
+
+            <%= if @has_next_page do %>
+          <.link patch={~p"/users/dashboard?page=#{@page + 1}"}>
+            <button class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Next</button>
+          </.link>
+        <% else %>
+          <span></span> <!-- Kekalkan layout kanan bila tiada Next -->
+            <% end %>
           </div>
-        <% end %>
+        </div>
+      <% end %>
 
         <%= if @active == "password" do %>
           <div class="bg-white p-6 rounded shadow">Tukar kata laluan</div>
