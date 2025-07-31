@@ -9,18 +9,18 @@ defmodule MyProjectWeb.UserDashboardLive do
      socket
      |> assign(:active, "dashboard")
      |> assign(:sidebar_open, &(!&1))
-     |> assign(:"home", sidebar_open: true)
+     |> assign(:search_term, "")
      |> assign(:open_settings_submenu, false)
      |> assign(:page, 1)}
   end
 
   def handle_params(%{"page" => page_param}, _url, socket) do
     page = parse_page(page_param)
-    {:noreply, assign_users(socket, page)}
+    {:noreply, assign_users(socket, page, socket.assigns.search_tern)}
   end
 
   def handle_params(_, _url, socket) do
-    {:noreply, assign_users(socket, 1)}
+    {:noreply, assign_users(socket, 1, socket.assigns.search_term)}
   end
   defp parse_page(nil), do: 1
   defp parse_page(page_str) do
@@ -30,10 +30,10 @@ defmodule MyProjectWeb.UserDashboardLive do
     end
   end
 
-  defp assign_users(socket, page) do
+  defp assign_users(socket, page, search_term) do
     limit = 10
     offset = (page - 1) * limit
-    users = Accounts.paginated_users(limit + 1, offset)
+      users = Accounts.paginated_users(limit + 1, offset)
 
     {displayed_users, has_next_page} =
       if length(users) > limit do
@@ -45,9 +45,10 @@ defmodule MyProjectWeb.UserDashboardLive do
     assign(socket,
       users: displayed_users,
       page: page,
-      has_next_page: has_next_page
+      has_next_page: has_next_page,
     )
   end
+
 
 
   def handle_event("toggle_sidebar", _params, socket) do
@@ -73,7 +74,6 @@ defmodule MyProjectWeb.UserDashboardLive do
      socket
      |> redirect(to: ~p"/users/log_out")}
   end
-
 
   def render(assigns) do
     ~H"""
@@ -200,4 +200,4 @@ defmodule MyProjectWeb.UserDashboardLive do
 
   defp format_datetime(nil), do: "-"
   defp format_datetime(dt), do: Calendar.strftime(dt, "%d-%m-%Y %H:%M")
-end
+ end

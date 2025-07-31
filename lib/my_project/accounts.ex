@@ -11,6 +11,18 @@ defmodule MyProject.Accounts do
      Repo.all(User)
   end
 
+  def list_users_by_role(role) do
+    from(u in User, where: u.role == ^role)
+    |> Repo.all()
+  end
+
+  def search_users(search, role) do
+    from(u in User,
+      where: ilike(u.email, ^"%#{search}%") and u.role == ^role
+    )
+    |> Repo.all()
+  end
+
   alias MyProject.Accounts.User
 
   def paginated_users(limit, offset) do
