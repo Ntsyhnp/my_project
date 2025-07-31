@@ -12,9 +12,32 @@ defmodule MyProjectWeb.UserDashboardLive do
      |> assign(:"home", sidebar_open: true)
      |> assign(:open_settings_submenu, false)
      |> assign(:filters, %{"status" => "all", "search" => ""})
-     |> assign(:items, list_users(%{"status" => "all", "search" => ""}))
+     |> assign(:users, Accounts.list_users())
+     |> assign(:query,  "")
+     |> assign(:role,  "all")
+     |> assign(:filters, %{"role" => "all"})
+     |> assign(:users, [])
      |> assign(:page, 1)}
   end
+
+  def handle_params(params, _uri, socket) do
+    filters = %{
+      "role" => Map.get(params, "role", "all")
+    }
+
+    page = Map.get(params, "page", "1") |> String.to_integer()
+
+    {users, has_next_page} = Accounts.list_users_with_filters(filters, page)
+
+    {:noreply,
+     assign(socket,
+       filters: filters,
+       users: users,
+       page: page,
+       has_next_page: has_next_page
+     )}
+  end
+
 
   def handle_params(%{"page" => page_param}, _url, socket) do
     page = parse_page(page_param)
@@ -70,32 +93,23 @@ defmodule MyProjectWeb.UserDashboardLive do
     {:noreply, assign_users(socket, socket.assigns.page)}
   end
 
+  def handle_event("search", %{"query" => query}, socket) do
+    users = Accounts.list_users(%{query: query, role: socket.assigns.role || "all"})
+    {:noreply, assign(socket, users: users, query: query)}
+  end
+
+
   def handle_event("logout", _params, socket) do
     {:noreply,
      socket
      |> redirect(to: ~p"/users/log_out")}
   end
 
-  def handle_event("filter", %{"filters" => filters_params}, socket) do
-    items = list_users(filters_params)
-
-    {:noreply,
-     socket
-     |> assign(:filters, filters_params)
-     |> assign(:items, items)}
+  def handle_event("filter", %{"filters" => filters}, socket) do
+    query = [role: filters["role"], page: 1]
+    {:noreply, push_patch(socket, to: ~p"/users/dashboard?#{query}")}
   end
 
-  defp list_users(%{"status" => "all", "search" => ""}) do
-    Accounts.list_users()
-  end
-
-  defp list_users(%{"status" => role, "search" => ""}) do
-    Accounts.list_users_by_role(role)
-  end
-
-  defp list_users(%{"status" => role, "search" => search}) do
-    Accounts.search_users(search, role)
-  end
 
 
 
@@ -163,29 +177,27 @@ defmodule MyProjectWeb.UserDashboardLive do
           <div class="bg-white p-6 rounded shadow overflow-x-auto">
             <h2 class="text-xl font-bold mb-4">Senarai Email Aktif</h2>
 
-            <!-- Filter Form -->
-            <form phx-submit="filter" class="mb-4 flex gap-2">
-              <input type="text" name="filters[search]" placeholder="Cari emel..."
-                     value={@filters["search"]} class="border px-2 py-1 rounded" />
-
-              <select name="filters[status]" class="border px-2 py-1 rounded">
-                <option value="all" selected={@filters["status"] == "all"}>Semua</option>
-                <option value="admin" selected={@filters["status"] == "admin"}>Admin</option>
-                <option value="user" selected={@filters["status"] == "user"}>User</option>
-              </select>
-
-              <button type="submit" class="bg-blue-500 text-white px-4 py-1 rounded">Tapis</button>
+            <form phx-change="search">
+              <input type="text" name="query" value={@query} placeholder="Cari email..."
+              class="border rounded px-3 py-1" />
             </form>
 
-             <!-- Filtered Items -->
-            <div>
-              <h3 class="font-semibold mb-2">Hasil Tapisan:</h3>
-              <ul class="list-disc pl-6">
-                <%= for item <- @items do %>
-                  <li><%= item.email%> - <%= item.role %></li>
-                <% end %>
-              </ul>
-            </div>
+                <!-- Filter Form Pink -->
+                <form phx-submit="filter" class="mb-6 flex gap-3 justify-end items-center">
+
+                  <select name="filters[role]" id="role"
+                    class="border border-pink-300 bg-pink-50 text-pink-800 rounded px-7 py-1 focus:border-transparent">
+                    <option value="all" selected={@filters["role"] == "all"}>Semua</option>
+                    <option value="admin" selected={@filters["role"] == "admin"}>Admin</option>
+                    <option value="user" selected={@filters["role"] == "user"}>User</option>
+                  </select>
+
+                  <button type="submit"
+                          class="bg-pink-500 hover:bg-pink-600 text-white font-medium px-4 py-1.5 rounded shadow transition duration-200">
+                    Tapis
+                  </button>
+                </form>
+
 
             <!-- Table: Users -->
             <table class="w-full table-auto border text-left">
@@ -217,7 +229,7 @@ defmodule MyProjectWeb.UserDashboardLive do
             <!-- Pagination -->
             <div class="mt-6 flex justify-between items-center">
               <%= if @page > 1 do %>
-                <.link patch={~p"/users/dashboard?page=#{@page - 1}"}>
+                <.link patch={~p"/users/dashboard?#{%{role: @filters["role"], page: @page - 1}}"}>
                   <button class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Prev</button>
                 </.link>
               <% else %>
@@ -226,15 +238,14 @@ defmodule MyProjectWeb.UserDashboardLive do
 
               <span class="text-sm text-gray-700">Page <%= @page %></span>
 
-
-            <%= if @has_next_page do %>
-          <.link patch={~p"/users/dashboard?page=#{@page + 1}"}>
-            <button class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Next</button>
-          </.link>
-        <% else %>
-          <span></span> <!-- Kekalkan layout kanan bila tiada Next -->
-            <% end %>
-          </div>
+              <%= if @has_next_page do %>
+                <.link patch={~p"/users/dashboard?#{%{role: @filters["role"], page: @page + 1}}"}>
+                  <button class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Next</button>
+                </.link>
+              <% else %>
+                <span></span> <!-- Kekalkan layout kanan bila tiada Next -->
+              <% end %>
+            </div>
         </div>
       <% end %>
 

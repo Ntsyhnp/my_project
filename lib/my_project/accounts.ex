@@ -16,12 +16,80 @@ defmodule MyProject.Accounts do
     |> Repo.all()
   end
 
-  def search_users(search, role) do
-    from(u in User,
-      where: ilike(u.email, ^"%#{search}%") and u.role == ^role
-    )
-    |> Repo.all()
+
+  def list_users_with_filters(filters, page) do
+    page_size = 10
+    offset = (page - 1) * page_size
+
+    query =
+      from(u in User)
+      |> maybe_filter_role(filters["role"])
+      |> offset(^offset)
+      |> limit(^page_size + 1)
+
+    results = Repo.all(query)
+    users = Enum.take(results, page_size)
+    has_next_page = length(results) > page_size
+
+    {users, has_next_page}
   end
+
+  defp maybe_filter_role(query, nil), do: query
+  defp maybe_filter_role(query, "all"), do: query
+  defp maybe_filter_role(query, role), do: from(u in query, where: u.role == ^role)
+
+
+  def list_users(opts \\ %{}) do
+    query = Map.get(opts, :query, "")
+    role = Map.get(opts, :role)
+    limit = Map.get(opts, :limit, 10)
+    offset = Map.get(opts, :offset, 0)
+
+    base =
+      from u in User,
+        order_by: [desc: u.inserted_at],
+        limit: ^limit,
+        offset: ^offset
+
+    base =
+      if role && role != "all" do
+        from u in base, where: u.role == ^role
+      else
+        base
+      end
+
+    base =
+      if query != "" do
+        like = "%#{query}%"
+        from u in base, where: ilike(u.email, ^like)
+      else
+        base
+      end
+
+    Repo.all(base)
+  end
+
+  def list_users_with_filters(filters, page) do
+    page_size = 10
+    offset = (page - 1) * page_size
+
+    query =
+      from(u in User)
+      |> maybe_filter_role(filters["role"])
+      |> offset(^offset)
+      |> limit(^page_size + 1)
+
+    results = Repo.all(query)
+    users = Enum.take(results, page_size)
+    has_next_page = length(results) > page_size
+
+    {users, has_next_page}
+  end
+
+  defp maybe_filter_role(query, nil), do: query
+  defp maybe_filter_role(query, "all"), do: query
+  defp maybe_filter_role(query, role), do: from(u in query, where: u.role == ^role)
+
 
   alias MyProject.Accounts.User
 
