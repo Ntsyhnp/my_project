@@ -175,35 +175,41 @@ defmodule MyProjectWeb.UserDashboardLive do
       <div class="flex-1 ml-1 p-6 bg-white-50">
         <%= if @active == "dashboard" do %>
           <div class="bg-white p-6 rounded shadow overflow-x-auto">
-            <h2 class="text-xl font-bold mb-4">Senarai Email Aktif</h2>
 
-            <form phx-change="search">
-              <input type="text" name="query" value={@query} placeholder="Cari email..."
-              class="border rounded px-3 py-1" />
-            </form>
+            <!-- Wrapper untuk search + filter supaya selari -->
+                <div class="flex flex-wrap gap-4 justify-between items-center mb-6">
 
-                <!-- Filter Form Pink -->
-                <form phx-submit="filter" class="mb-6 flex gap-3 justify-end items-center">
+                  <!-- Search Form -->
+                  <form phx-change="search">
+                    <input type="text" name="query" value={@query} placeholder="Cari email..."
+                      class="border border-pink-300 bg-pink-50 text-pink-800 rounded px-3 py-1 focus:outline-none focus:ring-0 focus:border-pink-300" />
+                  </form>
 
-                  <select name="filters[role]" id="role"
-                    class="border border-pink-300 bg-pink-50 text-pink-800 rounded px-7 py-1 focus:border-transparent">
-                    <option value="all" selected={@filters["role"] == "all"}>Semua</option>
-                    <option value="admin" selected={@filters["role"] == "admin"}>Admin</option>
-                    <option value="user" selected={@filters["role"] == "user"}>User</option>
-                  </select>
+                  <!-- Filter Form Pink -->
+                  <form phx-submit="filter" class="flex gap-3 items-center">
+                    <select name="filters[role]" id="role"
+                      class="border border-pink-300 bg-pink-50 text-pink-800 rounded px-7 py-1
+                        focus:outline-none focus:ring-0 focus:border-pink-300 focus-visible:outline-none focus-visible:ring-0">
+                      <option value="all" selected={@filters["role"] == "all"}>All</option>
+                      <option value="admin" selected={@filters["role"] == "admin"}>Admin</option>
+                      <option value="user" selected={@filters["role"] == "user"}>User</option>
+                    </select>
 
-                  <button type="submit"
-                          class="bg-pink-500 hover:bg-pink-600 text-white font-medium px-4 py-1.5 rounded shadow transition duration-200">
-                    Tapis
-                  </button>
-                </form>
+                    <button type="submit"
+                      class="bg-pink-500 hover:bg-pink-600 text-white font-medium px-4 py-1.5 rounded shadow transition duration-200">
+                      Tapis
+                    </button>
+                  </form>
+
+                </div>
+
 
 
             <!-- Table: Users -->
-            <table class="w-full table-auto border text-left">
-              <thead class="bg-gray-100">
+            <table class="w-full table-auto border text-left shadow-md rounded-lg overflow-hidden">
+              <thead class="bg-pink-100 text-pink-800 border-b border-pink-300">
                 <tr>
-                  <th class="px-4 py-5 text-left">#</th>
+                  <th class="px-4 py-5 text-left">Bil</th>
                   <th class="px-4 py-5 text-left min-w-[300px]">Email</th>
                   <th class="px-4 py-5 text-left min-w-[300px]">Tarikh Daftar</th>
                   <th class="px-4 py-5 text-left">Role</th>
@@ -212,11 +218,11 @@ defmodule MyProjectWeb.UserDashboardLive do
               </thead>
               <tbody>
                 <%= for {user, i} <- Enum.with_index(@users, 1) do %>
-                  <tr class="hover:bg-gray-50">
+                  <tr class="hover:bg-pink-50 even:bg-white odd:bg-pink-50 border-b border-pink-100">
                     <td class="px-6 py-4"><%= i %></td>
                     <td class="px-6 py-4"><%= user.email %></td>
                     <td class="px-6 py-4"><%= format_datetime(user.inserted_at) %></td>
-                    <td class="px-6 py-4"><%= user.role %></td>
+                    <td class="px-6 py-4 capitalize"><%= user.role %></td>
                     <td class="px-6 py-4 space-x-2">
                       <a href={~p"/users/#{user.id}/edit"} class="text-blue-600 hover:underline">Edit</a>
                       <button phx-click="delete_user" phx-value-id={user.id} class="text-red-600 hover:underline">Delete</button>
@@ -226,11 +232,12 @@ defmodule MyProjectWeb.UserDashboardLive do
               </tbody>
             </table>
 
+
             <!-- Pagination -->
             <div class="mt-6 flex justify-between items-center">
               <%= if @page > 1 do %>
                 <.link patch={~p"/users/dashboard?#{%{role: @filters["role"], page: @page - 1}}"}>
-                  <button class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Prev</button>
+                  <button class="px-4 py-2 bg-pink-200 rounded hover:bg-pink-300">Prev</button>
                 </.link>
               <% else %>
                 <span></span> <!-- Kekalkan layout kiri bila tiada Prev -->
@@ -240,7 +247,7 @@ defmodule MyProjectWeb.UserDashboardLive do
 
               <%= if @has_next_page do %>
                 <.link patch={~p"/users/dashboard?#{%{role: @filters["role"], page: @page + 1}}"}>
-                  <button class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Next</button>
+                  <button class="px-4 py-2 bg-pink-200 rounded hover:bg-pink-300">Next</button>
                 </.link>
               <% else %>
                 <span></span> <!-- Kekalkan layout kanan bila tiada Next -->
