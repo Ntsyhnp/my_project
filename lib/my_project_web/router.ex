@@ -17,42 +17,9 @@ defmodule MyProjectWeb.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/", MyProjectWeb do
-    pipe_through [:browser, :require_authenticated_user, :user_only]
-
-    get "/", PageController, :home
-    live "/dashboards", DashboardLive.Index, :index
-    live "/dashboards/new", DashboardLive.Index, :new
-    live "/dashboards/:id/edit", DashboardLive.Index, :edit
-
-    live "/dashboards/:id", DashboardLive.Show, :show
-    live "/dashboards/:id/show/edit", DashboardLive.Show, :edit
-  end
-
-  # Other scopes may use custom stacks.
-  # scope "/api", MyProjectWeb do
-  #   pipe_through :api
-  # end
-
-  # Enable LiveDashboard and Swoosh mailbox preview in development
-  if Application.compile_env(:my_project, :dev_routes) do
-    # If you want to use the LiveDashboard in production, you should put
-    # it behind authentication and allow only admins to access it.
-    # If your application does not have an admins-only section yet,
-    # you can use Plug.BasicAuth to set up some basic authentication
-    # as long as you are also using SSL (which you should anyway).
-    import Phoenix.LiveDashboard.Router
-
-    scope "/dev" do
-      pipe_through :browser
-
-      live_dashboard "/dashboard", metrics: MyProjectWeb.Telemetry
-      forward "/mailbox", Plug.Swoosh.MailboxPreview
-    end
-  end
-
-  ## Authentication routes
-
+  # =============================
+  # ✅ PUBLIC / AUTH PAGES
+  # =============================
   scope "/", MyProjectWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
@@ -68,16 +35,6 @@ defmodule MyProjectWeb.Router do
   end
 
   scope "/", MyProjectWeb do
-    pipe_through [:browser, :require_authenticated_user]
-
-    live_session :require_authenticated_user,
-      on_mount: [{MyProjectWeb.UserAuth, :ensure_authenticated}] do
-      live "/users/settings", UserSettingsLive, :edit
-      live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
-    end
-  end
-
-  scope "/", MyProjectWeb do
     pipe_through [:browser]
 
     delete "/users/log_out", UserSessionController, :delete
@@ -89,22 +46,52 @@ defmodule MyProjectWeb.Router do
     end
   end
 
-  scope "/admin", MyProjectWeb do
-    pipe_through [:browser, :require_authenticated_user, :admin_only]
-
-    live "/dashboard", AdminDashboardLive, :index
-  end
-
+  # =============================
+  # ✅ USER-ONLY ROUTES
+  # =============================
   scope "/users", MyProjectWeb do
     pipe_through [:browser, :require_authenticated_user, :user_only]
 
-    live "/dashboard", UserDashboardLive, :index
+    live_session :user_only,
+      on_mount: [{MyProjectWeb.UserAuth, :ensure_authenticated}] do
+      live "/dashboard", UserDashboardLive
+      live "/settings", UserSettingsLive, :edit
+      live "/settings/confirm_email/:token", UserSettingsLive, :confirm_email
+    end
   end
 
-  scope "/admin", MyAppWeb do
-  pipe_through :browser
+  # =============================
+  # ✅ ADMIN-ONLY ROUTES
+  # =============================
+  scope "/admin", MyProjectWeb do
+    pipe_through [:browser, :require_authenticated_user, :admin_only]
 
-  live "/dashboard", AdminDashboardLive
-end
+    live_session :admin_only,
+      on_mount: [{MyProjectWeb.UserAuth, :ensure_authenticated}] do
+      live "/dashboard", AdminDashboardLive
+    end
+  end
 
+  # =============================
+  # ✅ CATCH-ALL ROUTE (Example Home Page)
+  # =============================
+  scope "/", MyProjectWeb do
+    pipe_through [:browser, :require_authenticated_user, :user_only]
+
+    get "/", PageController, :home
+  end
+
+  # =============================
+  # ✅ DEV TOOLS
+  # =============================
+  if Application.compile_env(:my_project, :dev_routes) do
+    import Phoenix.LiveDashboard.Router
+
+    scope "/dev" do
+      pipe_through :browser
+
+      live_dashboard "/dashboard", metrics: MyProjectWeb.Telemetry
+      forward "/mailbox", Plug.Swoosh.MailboxPreview
+    end
+  end
 end

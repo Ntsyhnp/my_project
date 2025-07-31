@@ -8,7 +8,8 @@ defmodule MyProjectWeb.UserDashboardLive do
     {:ok,
      socket
      |> assign(:active, "dashboard")
-     |> assign(:sidebar_open, true)
+     |> assign(:sidebar_open, &(!&1))
+     |> assign(:"home", sidebar_open: true)
      |> assign(:open_settings_submenu, false)
      |> assign(:page, 1)}
   end
@@ -21,7 +22,6 @@ defmodule MyProjectWeb.UserDashboardLive do
   def handle_params(_, _url, socket) do
     {:noreply, assign_users(socket, 1)}
   end
-
   defp parse_page(nil), do: 1
   defp parse_page(page_str) do
     case Integer.parse(page_str) do
@@ -78,8 +78,26 @@ defmodule MyProjectWeb.UserDashboardLive do
   def render(assigns) do
     ~H"""
     <div class="flex h-screen w-full">
+    <!-- Burger Menu Button -->
+    <button
+     phx-click="toggle_sidebar"
+     class="fixed top-4 left-4 z-50 p-2 rounded-md bg-pink-900 text-white md:hidden"
+      >
+      <!-- Heroicon: Menu -->
+       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+       viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round"
+          stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+     </svg>
+    </button>
+
+
       <!-- Sidebar -->
-      <aside class="fixed top-0 left-0 w-64 h-screen bg-pink-900 text-white shadow-lg z-40">
+        <aside class={
+        "fixed top-0 left-0 w-64 h-screen bg-pink-900 text-white shadow-lg z-40 transform transition-transform duration-300 " <>
+        if @sidebar_open, do: "translate-x-0", else: "-translate-x-full"
+       }>
+
         <div class="p-4 border-b border-pink-700">
           <h1 class="text-2xl font-bold mb-6">User Panel</h1>
         </div>
@@ -116,7 +134,7 @@ defmodule MyProjectWeb.UserDashboardLive do
       </aside>
 
       <!-- Content -->
-      <div class="flex-1 ml-10 p-6 bg-white-50">
+      <div class="flex-1 ml-1 p-6 bg-white-50">
         <%= if @active == "dashboard" do %>
           <div class="bg-white p-6 rounded shadow overflow-x-auto">
             <h2 class="text-xl font-bold mb-4">Senarai Email Aktif</h2>
