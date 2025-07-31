@@ -9,18 +9,20 @@ defmodule MyProjectWeb.UserDashboardLive do
      socket
      |> assign(:active, "dashboard")
      |> assign(:sidebar_open, &(!&1))
-     |> assign(:search_term, "")
+     |> assign(:"home", sidebar_open: true)
      |> assign(:open_settings_submenu, false)
+     |> assign(:filters, %{"status" => "all", "search" => ""})
+     |> assign(:items, list_users(%{"status" => "all", "search" => ""}))
      |> assign(:page, 1)}
   end
 
   def handle_params(%{"page" => page_param}, _url, socket) do
     page = parse_page(page_param)
-    {:noreply, assign_users(socket, page, socket.assigns.search_tern)}
+    {:noreply, assign_users(socket, page)}
   end
 
   def handle_params(_, _url, socket) do
-    {:noreply, assign_users(socket, 1, socket.assigns.search_term)}
+    {:noreply, assign_users(socket, 1)}
   end
   defp parse_page(nil), do: 1
   defp parse_page(page_str) do
@@ -30,10 +32,10 @@ defmodule MyProjectWeb.UserDashboardLive do
     end
   end
 
-  defp assign_users(socket, page, search_term) do
+  defp assign_users(socket, page) do
     limit = 10
     offset = (page - 1) * limit
-      users = Accounts.paginated_users(limit + 1, offset)
+    users = Accounts.paginated_users(limit + 1, offset)
 
     {displayed_users, has_next_page} =
       if length(users) > limit do
@@ -45,10 +47,9 @@ defmodule MyProjectWeb.UserDashboardLive do
     assign(socket,
       users: displayed_users,
       page: page,
-      has_next_page: has_next_page,
+      has_next_page: has_next_page
     )
   end
-
 
 
   def handle_event("toggle_sidebar", _params, socket) do
@@ -74,6 +75,29 @@ defmodule MyProjectWeb.UserDashboardLive do
      socket
      |> redirect(to: ~p"/users/log_out")}
   end
+
+  def handle_event("filter", %{"filters" => filters_params}, socket) do
+    items = list_users(filters_params)
+
+    {:noreply,
+     socket
+     |> assign(:filters, filters_params)
+     |> assign(:items, items)}
+  end
+
+  defp list_users(%{"status" => "all", "search" => ""}) do
+    Accounts.list_users()
+  end
+
+  defp list_users(%{"status" => role, "search" => ""}) do
+    Accounts.list_users_by_role(role)
+  end
+
+  defp list_users(%{"status" => role, "search" => search}) do
+    Accounts.search_users(search, role)
+  end
+
+
 
   def render(assigns) do
     ~H"""
@@ -139,6 +163,31 @@ defmodule MyProjectWeb.UserDashboardLive do
           <div class="bg-white p-6 rounded shadow overflow-x-auto">
             <h2 class="text-xl font-bold mb-4">Senarai Email Aktif</h2>
 
+            <!-- Filter Form -->
+            <form phx-submit="filter" class="mb-4 flex gap-2">
+              <input type="text" name="filters[search]" placeholder="Cari emel..."
+                     value={@filters["search"]} class="border px-2 py-1 rounded" />
+
+              <select name="filters[status]" class="border px-2 py-1 rounded">
+                <option value="all" selected={@filters["status"] == "all"}>Semua</option>
+                <option value="admin" selected={@filters["status"] == "admin"}>Admin</option>
+                <option value="user" selected={@filters["status"] == "user"}>User</option>
+              </select>
+
+              <button type="submit" class="bg-blue-500 text-white px-4 py-1 rounded">Tapis</button>
+            </form>
+
+             <!-- Filtered Items -->
+            <div>
+              <h3 class="font-semibold mb-2">Hasil Tapisan:</h3>
+              <ul class="list-disc pl-6">
+                <%= for item <- @items do %>
+                  <li><%= item.email%> - <%= item.role %></li>
+                <% end %>
+              </ul>
+            </div>
+
+            <!-- Table: Users -->
             <table class="w-full table-auto border text-left">
               <thead class="bg-gray-100">
                 <tr>
@@ -164,7 +213,6 @@ defmodule MyProjectWeb.UserDashboardLive do
                 <% end %>
               </tbody>
             </table>
-
 
             <!-- Pagination -->
             <div class="mt-6 flex justify-between items-center">
@@ -200,4 +248,4 @@ defmodule MyProjectWeb.UserDashboardLive do
 
   defp format_datetime(nil), do: "-"
   defp format_datetime(dt), do: Calendar.strftime(dt, "%d-%m-%Y %H:%M")
- end
+end
